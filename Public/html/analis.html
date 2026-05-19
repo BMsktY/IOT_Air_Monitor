@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Analis - Laporan & Riwayat Data</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body class="dashboard-page">
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>AQMS (Analis)</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/dashboard" class="nav-item">
+                    <span>Dashboard Utama</span>
+                </a>
+                <a href="/analis" class="nav-item active">
+                    <span>Laporan & Riwayat</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button onclick="logout()" class="btn-logout">
+                    <span>Logout</span> 
+                </button>
+            </div>
+        </aside>
+        <main class="main-content">
+            <header class="top-header">
+                <h1>Laporan & Riwayat Data (Analis)</h1>
+                <div class="header-actions">
+                    <div class="user-info" id="userInfo">
+                        <span>Analis</span>
+                    </div>
+                </div>
+            </header>
+            <div class="dashboard-content">
+                <div class="admin-content">
+                    <div class="admin-header">
+                        <h2>Riwayat Data 24 Jam Terakhir</h2>
+                        <button onclick="fetchHistory()" class="btn-primary" style="margin-top: 1rem;">Refresh Data</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Waktu</th>
+                                    <th>AQI</th>
+                                    <th>Suhu (°C)</th>
+                                    <th>Kelembapan (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <tr><td colspan="4" style="text-align: center;">Memuat data riwayat...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="admin-content" style="margin-top: 2rem;">
+                    <div class="admin-header">
+                        <h2>Report Harian (Rata-Rata AQI)</h2>
+                        <button onclick="generateReport()" class="btn-primary" style="margin-top: 1rem;">Generate Report Hari Ini</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Tanggal Data</th>
+                                    <th>Waktu Dibuat</th>
+                                    <th>Lokasi</th>
+                                    <th>Rata-Rata AQI</th>
+                                    <th>Dibuat Oleh</th>
+                                    <th>Dokumen Catatan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportsTableBody">
+                                <tr><td colspan="6" style="text-align: center;">Memuat data report...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="/js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = checkAuth();
+            if (user && user.Role !== 'Analis' && user.Role !== 'Admin') {
+                alert('Akses Ditolak: Halaman ini khusus untuk Analis & Admin');
+                window.location.href = '/dashboard';
+            }
+            if (user && user.Nama) {
+                document.querySelector('#userInfo span').textContent = user.Nama + ' (' + user.Role + ')';
+            }
+            fetchHistory();
+            fetchReports();
+        });
+
+        async function fetchHistory() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/sensor-data/24h', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                
+                const tbody = document.getElementById('historyTableBody');
+                tbody.innerHTML = '';
+                
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Tidak ada data riwayat</td></tr>';
+                    return;
+                }
+
+                data.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${new Date(item.Waktu).toLocaleString('id-ID')}</td>
+                        <td><strong>${item.Nilai_AQI}</strong></td>
+                        <td>${item.Suhu}</td>
+                        <td>${item.Kelembapan}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Error fetching history:', error);
+            }
+        }
+
+        async function fetchReports() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/reports', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                
+                const tbody = document.getElementById('reportsTableBody');
+                tbody.innerHTML = '';
+                
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Tidak ada data report</td></tr>';
+                    return;
+                }
+
+                data.forEach(item => {
+                    const tr = document.createElement('tr');
+                    const snippet = item.Dokumen_Catatan ? item.Dokumen_Catatan.substring(0, 30).replace(/\n/g, ' ') + '...' : '-';
+                    tr.innerHTML = `
+                        <td><strong>${item.Range_data}</strong></td>
+                        <td>${new Date(item.Waktu_Dibuat).toLocaleString('id-ID')}</td>
+                        <td>${item.nama_lokasi}</td>
+                        <td>${item.Nilai_AQI_RataRata}</td>
+                        <td>${item.nama_user}</td>
+                        <td>
+                            <button class="btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;" onclick='alert(${JSON.stringify(item.Dokumen_Catatan)})'>Lihat Catatan</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Error fetching reports:', error);
+            }
+        }
+
+        async function generateReport() {
+            if (!confirm('PERINGATAN!\nTindakan ini akan membuat laporan berdasarkan data saat ini, lalu MENGHAPUS SEMUA ISI TABEL SENSOR_DATA secara permanen.\nApakah Anda yakin ingin melanjutkan?')) {
+                return;
+            }
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/report/generate', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                alert(data.message);
+                if (response.ok) {
+                    fetchReports();
+                }
+            } catch (error) {
+                console.error('Error generating report:', error);
+                alert('Gagal menggenerate report.');
+            }
+        }
+    </script>
+</body>
+</html>

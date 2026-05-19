@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Air Quality Monitoring</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body class="dashboard-page">
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>AQMS</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/dashboard" class="nav-item active">
+                    <span>Dashboard</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button onclick="logout()" class="btn-logout">
+                    <span>Logout</span> 
+                </button>
+            </div>
+        </aside>
+        <main class="main-content">
+            <header class="top-header">
+                <h1>Dashboard Publik - Kantin</h1>
+                <div class="header-actions">
+                    <div class="sensor-status">
+                        <span class="status-badge active" id="connectionStatus">Live</span>
+                        <span id="sensorName">Sensor Kantin</span>
+                    </div>
+                    <div class="user-info" id="userInfo">
+                        <span>Publik</span>
+                    </div>
+                </div>
+            </header>
+            <div class="dashboard-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">AQI</span>
+                            <span class="stat-icon">🌿</span>
+                        </div>
+                        <div class="stat-value" id="aqiValue">-</div>
+                        <div class="stat-status" id="aqiStatus">Menunggu data...</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Suhu</span>
+                            <span class="stat-icon">🌡️</span>
+                        </div>
+                        <div class="stat-value" id="tempValue">-<span class="unit">°C</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Kelembapan</span>
+                            <span class="stat-icon">💧</span>
+                        </div>
+                        <div class="stat-value" id="humidityValue">-<span class="unit">%</span></div>
+                    </div>
+                </div>
+                <div class="charts-grid">
+                    <div class="chart-card" style="grid-column: 1 / -1;">
+                        <h3>Grafik AQI Real-time - Kantin</h3>
+                        <canvas id="aqiChart" style="max-height: 400px;"></canvas>
+                    </div>
+                </div>
+                
+                <div class="info-card" style="margin-top: 1.5rem;">
+                    <h3>Informasi Sensor</h3>
+                    <div class="info-content">
+                        <div class="info-row">
+                            <span class="info-label">Nama Sensor</span>
+                            <span class="info-value" id="sensorNameInfo">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Lokasi</span>
+                            <span class="info-value" id="locationInfo">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Terakhir Update</span>
+                            <span class="info-value" id="lastUpdate">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="/js/realtime.js"></script>
+    <script src="/js/auth.js"></script>
+</body>
+</html>

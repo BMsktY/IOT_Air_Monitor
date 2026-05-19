@@ -1,0 +1,46 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "wait-for-server",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-Command",
+        "Write-Host '⏳ Waiting for server...'; Start-Sleep -Seconds 3; Write-Host '✅ Server ready'"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "install-deps",
+      "type": "shell",
+      "command": "npm",
+      "args": ["install"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Build ESP32 Firmware",
+      "type": "shell",
+      "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "platformio", "run"],
+      "options": {
+        "cwd": "${workspaceFolder}/wokwi"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Wokwi Simulator",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-Command",
+        "Write-Host 'Wokwi CLI npm package tidak tersedia di registry. Upload file wokwi/diagram.json secara manual ke Wokwi.com atau gunakan ekstensi Wokwi VS Code.'"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

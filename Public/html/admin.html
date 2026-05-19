@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Air Quality Monitoring</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+
+<body class="admin-page">
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>AQMS</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/dashboard" class="nav-item">
+                    <span>Dashboard Utama</span>
+                </a>
+                <a href="/analis" class="nav-item">
+                    <span>Laporan & Riwayat</span>
+                </a>
+                <a href="/admin" class="nav-item active">
+                    <span>Kelola Sensor</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span>Pengguna</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button onclick="logout()" class="btn-logout">
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+        <main class="main-content">
+            <header class="top-header">
+                <h1>Kelola Sensor</h1>
+                <div class="header-actions">
+                    <button class="btn-primary" onclick="openModal()">
+                        Tambah Sensor
+                    </button>
+                </div>
+            </header>
+            <div class="admin-content">
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nama Sensor</th>
+                                <th>Lokasi</th>
+                                <th>Tipe</th>
+                                <th>Status</th>
+                                <th>Terakhir Update</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sensorTableBody">
+                            <!-- Data will be loaded by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+    <div id="sensorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Tambah Sensor</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="sensorForm">
+                <input type="hidden" id="sensorId" name="Id_sensor">
+                <div class="form-group">
+                    <label for="namaSensor">Nama Sensor</label>
+                    <input type="text" id="namaSensor" name="Nama_sensor" required>
+                </div>
+                <div class="form-group">
+                    <label for="tipeSensor">Tipe</label>
+                    <select id="tipeSensor" name="Tipe" required>
+                        <option value="PM2.5">PM2.5</option>
+                        <option value="CO">CO</option>
+                        <option value="O3">O3</option>
+                        <option value="DHT22">DHT22</option>
+                        <option value="MQ135">MQ135</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="lokasi">Lokasi</label>
+                    <select id="lokasi" name="Id_lokasi" required>
+                        <option value="1">Universitas Pignatelli Triputra - Kantin</option>
+                        <option value="2">Universitas Pignatelli Triputra - Ruang Kelas</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="status">Status</label>
+                    <select id="status" name="Status" required>
+                        <option value="Aktif">Aktif</option>
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Rusak">Rusak</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeModal()">Batal</button>
+                    <button type="submit" class="btn-primary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script src="/js/admin.js"></script>
+    <script src="/js/auth.js"></script>
+</body>
+
+</html>
