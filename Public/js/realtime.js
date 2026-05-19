@@ -67,7 +67,7 @@ function updateConnectionStatus(status) {
         badge.style.background = '#d1fae5';
         badge.style.color = '#059669';
     } else {
-        badge.textContent = '● Bukan Live';
+        badge.textContent = '● Mati';
         badge.style.background = '#fee2e2';
         badge.style.color = '#dc2626';
     }
