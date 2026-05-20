@@ -53,7 +53,6 @@ function connectMQTT() {
             else if (data.aqi <= 200) aqiStatus = "Tidak Sehat";
             else if (data.aqi <= 300) aqiStatus = "Sangat Tidak Sehat";
 
-            // 📟 TAMPILKAN DI TERMINAL NODE.JS
             console.log('------------------------------------------------');
             console.log('DATA MASUK DARI WOKWI SIMULATOR');
             console.log('Suhu      :', data.temperature, '°C');
@@ -85,7 +84,7 @@ function connectMQTT() {
     mqttClient.on('error', (err) => console.error('[MQTT] Error:', err.message));
     mqttClient.on('reconnect', () => {
         reconnectCount++;
-        console.log(`🔄 [MQTT] Reconnecting... (${reconnectCount}/${MAX_RECONNECT})`);
+        console.log(` [MQTT] Reconnecting... (${reconnectCount}/${MAX_RECONNECT})`);
         if (reconnectCount >= MAX_RECONNECT) console.error('[MQTT] Max reconnections reached.');
     });
     mqttClient.on('close', () => console.log('[MQTT] Connection closed'));

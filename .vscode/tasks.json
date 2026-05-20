@@ -7,7 +7,7 @@
       "command": "powershell",
       "args": [
         "-Command",
-        "Write-Host '⏳ Waiting for server...'; Start-Sleep -Seconds 3; Write-Host '✅ Server ready'"
+        "Write-Host ' Waiting for server...'; Start-Sleep -Seconds 3; Write-Host ' Server ready'"
       ],
       "problemMatcher": []
     },

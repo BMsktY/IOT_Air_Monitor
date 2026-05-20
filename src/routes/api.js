@@ -221,7 +221,6 @@ router.put('/sensors/:id', authenticateToken, authorizeRole('Admin'), async (req
     }
 });
 
-// DELETE SENSOR (Admin only)
 router.delete('/sensors/:id', authenticateToken, authorizeRole('Admin'), async (req, res) => {
     try {
         const { id } = req.params;
@@ -233,7 +232,6 @@ router.delete('/sensors/:id', authenticateToken, authorizeRole('Admin'), async (
     }
 });
 
-// GET LOCATIONS
 router.get('/locations', authenticateToken, async (req, res) => {
     try {
         const [locations] = await db.query('SELECT * FROM location');
@@ -243,29 +241,25 @@ router.get('/locations', authenticateToken, async (req, res) => {
         res.status(500).json({ message: 'Terjadi kesalahan' });
     }
 });
-// GENERATE DAILY REPORT (Analis & Admin)
+
 router.post('/report/generate', authenticateToken, authorizeRole('Analis', 'Admin'), async (req, res) => {
     try {
         const today = new Date().toISOString().split('T')[0];
         
-        // Cek dulu apakah ada data
         const [allData] = await db.query('SELECT * FROM sensor_data ORDER BY Waktu ASC');
         if (allData.length === 0) {
             return res.status(400).json({ message: 'Tidak ada data sensor untuk digenerate.' });
         }
 
-        // Susun dokumen catatan dari seluruh data
-        let dokumen_catatan = `Laporan Sensor (Data Mentah)\nTanggal: ${today}\nTotal Data: ${allData.length}\n`;
+        let dokumen_catatan = `Laporan Sensor Harian\nTanggal: ${today}\nTotal Data: ${allData.length}\n`;
         dokumen_catatan += `\nLokasi ID | Suhu | Kelembapan | AQI | Waktu\n`;
         dokumen_catatan += `---------------------------------------------------\n`;
         allData.forEach(row => {
             dokumen_catatan += `${row.Id_lokasi} | ${row.Suhu}°C | ${row.Kelembapan}% | ${row.Nilai_AQI} | ${new Date(row.Waktu).toLocaleString('id-ID')}\n`;
         });
 
-        // Hapus report hari ini jika sudah ada agar bisa di-replace
         await db.query('DELETE FROM report WHERE Range_data = ?', [today]);
 
-        // Ambil rata-rata AQI per lokasi dari seluruh data yang ada saat ini
         const [averages] = await db.query(`
             SELECT Id_lokasi, AVG(Nilai_AQI) as avg_aqi 
             FROM sensor_data 
