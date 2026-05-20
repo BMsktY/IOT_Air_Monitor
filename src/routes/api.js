@@ -275,7 +275,6 @@ router.post('/report/generate', authenticateToken, authorizeRole('Analis', 'Admi
             );
         }
 
-        // HAPUS SEMUA DATA SENSOR (Arsip)
         await db.query('TRUNCATE TABLE sensor_data');
 
         res.json({ message: 'Report berhasil di-generate! Data sensor telah dikosongkan (reset).' });
