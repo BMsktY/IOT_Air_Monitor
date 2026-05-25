@@ -127,31 +127,57 @@ async function startServer() {
             process.exit(1);
         }
 
-        const PORT = await findAvailablePort(process.env.PORT || 3000);
-        console.log(`\nChecking port availability...`);
-        console.log(`Port ${PORT} is available!`);
+        // 1. Jika di hosting/web (Render dsb) yang memberikan PORT, gunakan langsung!
+        if (process.env.PORT) {
+            const PORT = process.env.PORT;
+            // Tangkap error jika port production sedang dipakai
+            server.on('error', (err) => {
+                if (err.code === 'EADDRINUSE') {
+                    console.error(`\n❌ GAGAL: Port ${PORT} sedang digunakan oleh program lain.`);
+                    console.error(`💡 TIPS: Jika Anda di lokal, gunakan perintah: npm run dev`);
+                    process.exit(1);
+                } else {
+                    console.error('Server error:', err.message);
+                }
+            });
 
-        server.listen(PORT, async () => {
-            console.log(`\nServer berjalan di http://localhost:${PORT}`);
-            console.log(`Dashboard: http://localhost:${PORT}/dashboard`);
-            console.log(`Login: http://localhost:${PORT}/login\n`);
+            server.listen(PORT, async () => {
+                console.log(`\n🌍 Server produksi berjalan di port: ${PORT}`);
+                try {
+                    const { connectMQTT } = require('./src/mqtt/mqttClient');
+                    connectMQTT();
+                } catch (error) {
+                    console.log('MQTT client gagal dimuat:', error.message);
+                }
+            });
+        } else {
+            // 2. Jika di lokal (terminal), cari port kosong otomatis mulai 3000
+            const PORT = await findAvailablePort(3000);
+            console.log(`\nChecking port availability...`);
+            console.log(`Port ${PORT} is available!`);
 
-            try {
-                const { connectMQTT } = require('./src/mqtt/mqttClient');
-                connectMQTT();
-            } catch (error) {
-                console.log('MQTT client gagal dimuat:', error.message);
-            }
-        });
+            server.listen(PORT, async () => {
+                console.log(`\n💻 Server lokal berjalan di http://localhost:${PORT}`);
+                console.log(`Dashboard: http://localhost:${PORT}/dashboard`);
+                console.log(`Login: http://localhost:${PORT}/login\n`);
 
-        server.on('error', (err) => {
-            if (err.code === 'EADDRINUSE') {
-                console.log(`Port ${PORT} masih digunakan, mencoba port berikutnya...`);
-                startServer(); // Retry with next port
-            } else {
-                console.error('Server error:', err.message);
-            }
-        });
+                try {
+                    const { connectMQTT } = require('./src/mqtt/mqttClient');
+                    connectMQTT();
+                } catch (error) {
+                    console.log('MQTT client gagal dimuat:', error.message);
+                }
+            });
+
+            server.on('error', (err) => {
+                if (err.code === 'EADDRINUSE') {
+                    console.log(`Port ${PORT} masih digunakan, mencoba port berikutnya...`);
+                    startServer(); // Retry with next port
+                } else {
+                    console.error('Server error:', err.message);
+                }
+            });
+        }
 
     } catch (error) {
         console.error('Error starting server:', error.message);
