@@ -4,6 +4,10 @@ const db = require('../config/database');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
+// Validation Middlewares
+const validate = require('../middleware/validate');
+const schemas = require('../middleware/validators');
+
 const authenticateToken = (req, res, next) => {
     const token = req.headers['authorization']?.split(' ')[1];
     if (!token) return res.status(401).json({ message: 'Token tidak ditemukan' });
@@ -25,14 +29,10 @@ const authorizeRole = (...roles) => {
 };
 
 // REGISTER (Hanya role Publik)
-router.post('/auth/register', async (req, res) => {
+router.post('/auth/register', validate(schemas.register), async (req, res, next) => {
     try {
         const { Nama, Email, Password } = req.body;
         const Role = 'Publik';
-
-        if (!Nama || !Email || !Password) {
-            return res.status(400).json({ message: 'Data tidak lengkap' });
-        }
 
         const [existing] = await db.query('SELECT * FROM users WHERE Email = ?', [Email]);
         if (existing.length > 0) {
@@ -48,13 +48,12 @@ router.post('/auth/register', async (req, res) => {
 
         res.status(201).json({ message: 'Registrasi berhasil', userId: result.insertId });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Terjadi kesalahan server' });
+        next(error);
     }
 });
 
 // LOGIN
-router.post('/auth/login', async (req, res) => {
+router.post('/auth/login', validate(schemas.login), async (req, res, next) => {
     try {
         const { email, password } = req.body;
         const [users] = await db.query('SELECT * FROM users WHERE Email = ?', [email]);
@@ -81,13 +80,12 @@ router.post('/auth/login', async (req, res) => {
             user: { Id_user: user.Id_user, Nama: user.Nama, Email: user.Email, Role: user.Role }
         });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Terjadi kesalahan server' });
+        next(error);
     }
 });
 
 // GET SENSOR DATA LATEST
-router.get('/sensor-data/latest', authenticateToken, async (req, res) => {
+router.get('/sensor-data/latest', authenticateToken, async (req, res, next) => {
     try {
         const [latestRows] = await db.query(`
             SELECT Id_sensor FROM sensor_data
@@ -123,13 +121,12 @@ router.get('/sensor-data/latest', authenticateToken, async (req, res) => {
 
         res.json({ data: reversed, sensor, location });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Terjadi kesalahan' });
+        next(error);
     }
 });
 
 // GET SENSOR DATA 24H
-router.get('/sensor-data/24h', authenticateToken, async (req, res) => {
+router.get('/sensor-data/24h', authenticateToken, async (req, res, next) => {
     try {
         const [latestRows] = await db.query(`
             SELECT Id_sensor FROM sensor_data
@@ -148,13 +145,12 @@ router.get('/sensor-data/24h', authenticateToken, async (req, res) => {
 
         res.json(data.reverse());
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Terjadi kesalahan' });
+        next(error);
     }
 });
 
 // GET ALL SENSORS (Admin only)
-router.get('/sensors', authenticateToken, authorizeRole('Admin'), async (req, res) => {
+router.get('/sensors', authenticateToken, authorizeRole('Admin'), async (req, res, next) => {
     try {
         const [sensors] = await db.query(`
             SELECT s.*, l.Nama_lokasi as location_name
@@ -163,13 +159,12 @@ router.get('/sensors', authenticateToken, authorizeRole('Admin'), async (req, re
         `);
         res.json(sensors);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Terjadi kesalahan' });
+        next(error);
     }
 });
 
 // GET SINGLE SENSOR BY ID (Admin only)
-router.get('/sensors/:id', authenticateToken, authorizeRole('Admin'), async (req, res) => {
+router.get('/sensors/:id', authenticateToken, authorizeRole('Admin'), async (req, res, next) => {
     try {
         const { id } = req.params;
         const [sensors] = await db.query('SELECT * FROM sensor WHERE Id_sensor = ?', [id]);
@@ -178,13 +173,12 @@ router.get('/sensors/:id', authenticateToken, authorizeRole('Admin'), async (req
         }
         res.json(sensors[0]);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Terjadi kesalahan' });
+        next(error);
     }
 });
 
 // CREATE SENSOR (Admin only)
-router.post('/sensors', authenticateToken, authorizeRole('Admin'), async (req, res) => {
+router.post('/sensors', authenticateToken, authorizeRole('Admin'), validate(schemas.sensor), async (req, res, next) => {
     try {
         const { Nama_sensor, Tipe, Status, Id_lokasi } = req.body;
         
@@ -198,13 +192,12 @@ router.post('/sensors', authenticateToken, authorizeRole('Admin'), async (req, r
             Id_sensor: result.insertId
         });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Terjadi kesalahan' });
+        next(error);
     }
 });
 
 // UPDATE SENSOR (Admin only)
-router.put('/sensors/:id', authenticateToken, authorizeRole('Admin'), async (req, res) => {
+router.put('/sensors/:id', authenticateToken, authorizeRole('Admin'), validate(schemas.sensor), async (req, res, next) => {
     try {
         const { id } = req.params;
         const { Nama_sensor, Tipe, Status, Id_lokasi } = req.body;
@@ -216,33 +209,30 @@ router.put('/sensors/:id', authenticateToken, authorizeRole('Admin'), async (req
         
         res.json({ message: 'Sensor berhasil diupdate' });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Terjadi kesalahan' });
+        next(error);
     }
 });
 
-router.delete('/sensors/:id', authenticateToken, authorizeRole('Admin'), async (req, res) => {
+router.delete('/sensors/:id', authenticateToken, authorizeRole('Admin'), async (req, res, next) => {
     try {
         const { id } = req.params;
         await db.query('DELETE FROM sensor WHERE Id_sensor = ?', [id]);
         res.json({ message: 'Sensor berhasil dihapus' });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Terjadi kesalahan' });
+        next(error);
     }
 });
 
-router.get('/locations', authenticateToken, async (req, res) => {
+router.get('/locations', authenticateToken, async (req, res, next) => {
     try {
         const [locations] = await db.query('SELECT * FROM location');
         res.json(locations);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Terjadi kesalahan' });
+        next(error);
     }
 });
 
-router.post('/report/generate', authenticateToken, authorizeRole('Analis', 'Admin'), async (req, res) => {
+router.post('/report/generate', authenticateToken, authorizeRole('Analis', 'Admin'), async (req, res, next) => {
     try {
         const today = new Date().toISOString().split('T')[0];
         
@@ -279,13 +269,12 @@ router.post('/report/generate', authenticateToken, authorizeRole('Analis', 'Admi
 
         res.json({ message: 'Report berhasil di-generate! Data sensor telah dikosongkan (reset).' });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Terjadi kesalahan server saat generate' });
+        next(error);
     }
 });
 
 // GET REPORTS (Analis & Admin)
-router.get('/reports', authenticateToken, authorizeRole('Analis', 'Admin'), async (req, res) => {
+router.get('/reports', authenticateToken, authorizeRole('Analis', 'Admin'), async (req, res, next) => {
     try {
         const [reports] = await db.query(`
             SELECT r.*, u.Nama as nama_user, l.Nama_lokasi as nama_lokasi 
@@ -296,24 +285,22 @@ router.get('/reports', authenticateToken, authorizeRole('Analis', 'Admin'), asyn
         `);
         res.json(reports);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Terjadi kesalahan server' });
+        next(error);
     }
 });
 
 // GET ALL USERS (Admin only)
-router.get('/users', authenticateToken, authorizeRole('Admin'), async (req, res) => {
+router.get('/users', authenticateToken, authorizeRole('Admin'), async (req, res, next) => {
     try {
         const [users] = await db.query('SELECT Id_user, Nama, Email, Role FROM users');
         res.json(users);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Terjadi kesalahan' });
+        next(error);
     }
 });
 
 // CREATE USER (Admin only)
-router.post('/users', authenticateToken, authorizeRole('Admin'), async (req, res) => {
+router.post('/users', authenticateToken, authorizeRole('Admin'), validate(schemas.user), async (req, res, next) => {
     try {
         const { Nama, Email, Password, Role } = req.body;
         
@@ -329,13 +316,12 @@ router.post('/users', authenticateToken, authorizeRole('Admin'), async (req, res
         
         res.status(201).json({ message: 'Pengguna berhasil ditambahkan', Id_user: result.insertId });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Terjadi kesalahan' });
+        next(error);
     }
 });
 
 // UPDATE USER (Admin only)
-router.put('/users/:id', authenticateToken, authorizeRole('Admin'), async (req, res) => {
+router.put('/users/:id', authenticateToken, authorizeRole('Admin'), validate(schemas.user), async (req, res, next) => {
     try {
         const { id } = req.params;
         const { Nama, Email, Role, Password } = req.body;
@@ -355,13 +341,12 @@ router.put('/users/:id', authenticateToken, authorizeRole('Admin'), async (req, 
         
         res.json({ message: 'Pengguna berhasil diupdate' });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Terjadi kesalahan' });
+        next(error);
     }
 });
 
 // DELETE USER (Admin only)
-router.delete('/users/:id', authenticateToken, authorizeRole('Admin'), async (req, res) => {
+router.delete('/users/:id', authenticateToken, authorizeRole('Admin'), async (req, res, next) => {
     try {
         const { id } = req.params;
         if (id == req.user.Id_user) {
@@ -370,8 +355,7 @@ router.delete('/users/:id', authenticateToken, authorizeRole('Admin'), async (re
         await db.query('DELETE FROM users WHERE Id_user = ?', [id]);
         res.json({ message: 'Pengguna berhasil dihapus' });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Terjadi kesalahan' });
+        next(error);
     }
 });
 

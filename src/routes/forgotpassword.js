@@ -3,24 +3,14 @@ const router = express.Router();
 const db = require('../config/database');
 const bcrypt = require('bcrypt');
 
+const validate = require('../middleware/validate');
+const schemas = require('../middleware/validators');
+
 // FORGOT PASSWORD - Langsung update password tanpa token/auth
 // Cukup masukkan email dan password baru
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', validate(schemas.forgotPassword), async (req, res, next) => {
     try {
         const { email, newPassword } = req.body;
-        
-        // Validasi input
-        if (!email || !newPassword) {
-            return res.status(400).json({ 
-                message: 'Email dan password baru diperlukan' 
-            });
-        }
-        
-        if (newPassword.length < 6) {
-            return res.status(400).json({ 
-                message: 'Password minimal 6 karakter' 
-            });
-        }
         
         // Cek apakah email terdaftar
         const [users] = await db.query(
@@ -57,29 +47,14 @@ router.post('/forgot-password', async (req, res) => {
         });
         
     } catch (error) {
-        console.error('Error forgot password:', error);
-        res.status(500).json({ 
-            message: 'Terjadi kesalahan server' 
-        });
+        next(error);
     }
 });
 
 // Endpoint untuk admin reset password user lain (optional)
-router.post('/admin/reset-password', async (req, res) => {
+router.post('/admin/reset-password', validate(schemas.adminResetPassword), async (req, res, next) => {
     try {
         const { targetEmail, newPassword } = req.body;
-        
-        if (!targetEmail || !newPassword) {
-            return res.status(400).json({ 
-                message: 'Email target dan password baru diperlukan' 
-            });
-        }
-        
-        if (newPassword.length < 6) {
-            return res.status(400).json({ 
-                message: 'Password minimal 6 karakter' 
-            });
-        }
         
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
@@ -99,10 +74,7 @@ router.post('/admin/reset-password', async (req, res) => {
         });
         
     } catch (error) {
-        console.error('Error admin reset password:', error);
-        res.status(500).json({ 
-            message: 'Terjadi kesalahan server' 
-        });
+        next(error);
     }
 });
 

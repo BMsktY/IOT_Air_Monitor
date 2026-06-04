@@ -5,6 +5,8 @@ const socketIO = require('socket.io');
 const path = require('path');
 const net = require('net');
 require('dotenv').config();
+const errorHandler = require('./src/middleware/errorHandler');
+const compression = require('compression');
 
 const app = express();
 const server = http.createServer(app);
@@ -33,6 +35,7 @@ function findAvailablePort(startPort = 3000) {
 }
 
 // Middleware
+app.use(compression());
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'Public')));
@@ -51,6 +54,9 @@ app.get('/dashboard', (req, res) => res.sendFile(path.join(htmlDir, 'index.html'
 app.get('/admin', (req, res) => res.sendFile(path.join(htmlDir, 'admin.html')));
 app.get('/analis', (req, res) => res.sendFile(path.join(htmlDir, 'analis.html')));
 app.get('/pengguna', (req, res) => res.sendFile(path.join(htmlDir, 'pengguna.html')));
+
+// Middleware Error Handling Tersentralisasi (Harus ditaruh setelah semua route)
+app.use(errorHandler);
 
 // WebSocket Handler
 io.on('connection', (socket) => {
@@ -142,7 +148,7 @@ async function startServer() {
             });
 
             server.listen(PORT, async () => {
-                console.log(`\n🌍 Server produksi berjalan di port: ${PORT}`);
+                console.log(`\nServer produksi berjalan di port: ${PORT}`);
                 try {
                     const { connectMQTT } = require('./src/mqtt/mqttClient');
                     connectMQTT();
@@ -157,7 +163,7 @@ async function startServer() {
             console.log(`Port ${PORT} is available!`);
 
             server.listen(PORT, async () => {
-                console.log(`\n💻 Server lokal berjalan di http://localhost:${PORT}`);
+                console.log(`\nServer lokal berjalan di http://localhost:${PORT}`);
                 console.log(`Dashboard: http://localhost:${PORT}/dashboard`);
                 console.log(`Login: http://localhost:${PORT}/login\n`);
 

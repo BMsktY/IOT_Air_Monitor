@@ -44,9 +44,10 @@ function renderSensorTable(sensors) {
         row.innerHTML = `
             <td>${sensor.Id_sensor}</td>
             <td>${sensor.Nama_sensor}</td>
-            <td>${sensor.location_name || 'Loading...'}</td>
+            <td>${sensor.location_name || '-'}</td>
+            <td>${sensor.Tipe || '-'}</td>
             <td><span class="status-indicator ${statusClass}">${statusText}</span></td>
-            <td>${new Date(sensor.Installed_at).toLocaleString('id-ID')}</td>
+            <td>${sensor.Installed_at ? new Date(sensor.Installed_at).toLocaleString('id-ID') : '-'}</td>
             <td>
                 <div class="action-buttons">
                     <button class="btn-icon edit" onclick="editSensor(${sensor.Id_sensor}, '${sensor.Nama_sensor}', '${sensor.Tipe}', ${sensor.Id_lokasi}, '${sensor.Status}')" title="Edit">
