@@ -59,7 +59,7 @@ const schemas = {
         Tipe: Joi.string().required().messages({
             'string.empty': 'Tipe sensor tidak boleh kosong'
         }),
-        Status: Joi.string().valid('Aktif', 'Nonaktif').optional(),
+        Status: Joi.string().valid('Aktif', 'Maintenance', 'Rusak').optional(),
         Id_lokasi: Joi.number().integer().required().messages({
             'number.base': 'Id_lokasi harus berupa angka'
         })
